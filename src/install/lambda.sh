@@ -4,19 +4,20 @@ source src/init.sh
 
 echo "Deploying Lambda function: $LAMBDA"
 
-ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text --no-cli-pager)
 ROLE_ARN="arn:aws:iam::$ACCOUNT_ID:role/$LAMBDA_ROLE"
 
 cd src/code
 zip -r lambda.zip lambda_function.py
 cd ../..
 
-if aws lambda get-function --function-name "$LAMBDA" --region "$REGION" 2>/dev/null; then
+if aws lambda get-function --function-name "$LAMBDA" --region "$REGION" --no-cli-pager 2>/dev/null; then
   echo "Lambda function $LAMBDA already exists, updating code"
   aws lambda update-function-code \
     --function-name "$LAMBDA" \
     --zip-file fileb://src/code/lambda.zip \
-    --region "$REGION"
+    --region "$REGION" \
+    --no-cli-pager
   
   aws lambda update-function-configuration \
     --function-name "$LAMBDA" \
@@ -25,8 +26,8 @@ if aws lambda get-function --function-name "$LAMBDA" --region "$REGION" 2>/dev/n
     --handler lambda_function.lambda_handler \
     --memory-size 512 \
     --timeout 30 \
-    --architectures arm64 \
-    --region "$REGION"
+    --region "$REGION" \
+    --no-cli-pager
   
   echo "Lambda function $LAMBDA updated successfully"
 else
@@ -38,8 +39,9 @@ else
     --zip-file fileb://src/code/lambda.zip \
     --memory-size 512 \
     --timeout 30 \
-    --architectures arm64 \
-    --region "$REGION"
+    --architectures "arm64" \
+    --region "$REGION" \
+    --no-cli-pager
   
   if [ $? -eq 0 ]; then
     echo "Lambda function $LAMBDA created successfully"
