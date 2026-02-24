@@ -6,31 +6,12 @@ import os
 s3_client = boto3.client('s3')
 
 def validate_bucket_name(bucket_name):
-    """
-    Validate S3 bucket name according to AWS documentation:
-    - 3-63 characters
-    - Lowercase letters, numbers, hyphens, dots
-    - Start and end with letter or number
-    - No consecutive dots
-    - Not formatted as IP address
-    """
     if not bucket_name or len(bucket_name) < 3 or len(bucket_name) > 63:
         return False, "Bucket name must be between 3 and 63 characters"
     
-    if not re.match(r'^[a-z0-9]', bucket_name):
-        return False, "Bucket name must start with a lowercase letter or number"
-    
-    if not re.match(r'[a-z0-9]$', bucket_name):
-        return False, "Bucket name must end with a lowercase letter or number"
-    
-    if not re.match(r'^[a-z0-9.-]+$', bucket_name):
-        return False, "Bucket name can only contain lowercase letters, numbers, hyphens, and dots"
-    
-    if '..' in bucket_name:
-        return False, "Bucket name cannot contain consecutive dots"
-    
-    if re.match(r'^\d+\.\d+\.\d+\.\d+$', bucket_name):
-        return False, "Bucket name cannot be formatted as an IP address"
+    sanitized = re.sub(r'[^a-z0-9.-]', '', bucket_name)
+    if sanitized != bucket_name:
+        return False, "Bucket name contains invalid characters"
     
     return True, "Valid"
 
