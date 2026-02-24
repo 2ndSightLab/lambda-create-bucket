@@ -15,14 +15,16 @@ TRUST_POLICY='{
   }]
 }'
 
-if aws iam get-role --role-name "$LAMBDA_ROLE" --region "$REGION" 2>/dev/null; then
+if aws iam get-role --role-name "$LAMBDA_ROLE" --no-cli-pager 2>/dev/null; then
   echo "Role $LAMBDA_ROLE already exists"
-  aws iam update-assume-role-policy --role-name "$LAMBDA_ROLE" --policy-document "$TRUST_POLICY" --region "$REGION"
+  aws iam update-assume-role-policy --role-name "$LAMBDA_ROLE" --policy-document "$TRUST_POLICY" --no-cli-pager
   echo "Updated trust policy for role $LAMBDA_ROLE"
 else
-  aws iam create-role --role-name "$LAMBDA_ROLE" --assume-role-policy-document "$TRUST_POLICY" --region "$REGION"
+  aws iam create-role --role-name "$LAMBDA_ROLE" --assume-role-policy-document "$TRUST_POLICY" --no-cli-pager
   if [ $? -eq 0 ]; then
     echo "Role $LAMBDA_ROLE created successfully"
+    echo "Waiting 10 seconds for IAM propagation..."
+    sleep 10
   else
     echo "Failed to create role $LAMBDA_ROLE"
     exit 1
