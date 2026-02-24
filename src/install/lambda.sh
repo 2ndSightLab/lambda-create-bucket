@@ -19,12 +19,15 @@ if aws lambda get-function --function-name "$LAMBDA" --region "$REGION" --no-cli
     --region "$REGION" \
     --no-cli-pager
   
+  echo "Waiting for code update to complete..."
+  aws lambda wait function-updated --function-name "$LAMBDA" --region "$REGION"
+  
   aws lambda update-function-configuration \
     --function-name "$LAMBDA" \
     --role "$ROLE_ARN" \
     --runtime python3.13 \
     --handler lambda_function.lambda_handler \
-    --memory-size 512 \
+    --memory-size 128 \
     --timeout 30 \
     --region "$REGION" \
     --no-cli-pager
@@ -37,7 +40,7 @@ else
     --role "$ROLE_ARN" \
     --handler lambda_function.lambda_handler \
     --zip-file fileb://src/code/lambda.zip \
-    --memory-size 512 \
+    --memory-size 128 \
     --timeout 30 \
     --architectures "arm64" \
     --region "$REGION" \
