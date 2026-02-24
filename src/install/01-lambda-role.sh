@@ -23,8 +23,6 @@ else
   aws iam create-role --role-name "$LAMBDA_ROLE" --assume-role-policy-document "$TRUST_POLICY" --no-cli-pager
   if [ $? -eq 0 ]; then
     echo "Role $LAMBDA_ROLE created successfully"
-    echo "Waiting 10 seconds for IAM propagation..."
-    sleep 10
   else
     echo "Failed to create role $LAMBDA_ROLE"
     exit 1

@@ -13,8 +13,10 @@ echo "Invoking Lambda function to create bucket: $BUCKET_NAME"
 
 aws lambda invoke \
   --function-name "$LAMBDA" \
+  --cli-binary-format raw-in-base64-out \
   --payload "{\"bucketName\":\"$BUCKET_NAME\"}" \
   --region "$REGION" \
+  --no-cli-pager \
   response.json
 
 if [ $? -eq 0 ]; then
