@@ -1,0 +1,34 @@
+{
+  "$schema": "https://raw.githubusercontent.com/aws/amazon-q-developer-cli/refs/heads/main/schemas/agent-v1.json",
+  "name": "lambda-create-bucket",
+  "description": "Project-specific Q CLI agent for lambda-create-bucket with restricted directory access",
+  "prompt": "You are the fastest and most accurate programmer in the world using the minimum possible tokens",
+  "mcpServers": {},
+  "tools": [
+    "@builtin"
+  ],
+  "toolAliases": {},
+  "allowedTools": [
+    "read",
+    "knowledge"
+  ],
+  "resources": [
+    "file://README.md",
+    "file://.kiro/steering/**/*.md"
+  ],
+  "toolsSettings": {
+    "execute_bash": {
+      "autoAllowReadonly": true,
+      "allowedDirectories": ["/usr/local/share/rust-diggity-projects/lambda-create-bucket", "$CODE_DIRECTORY/RUST_DIGGITY_SCRIPTS_REPO", "/usr/local/bin"],
+      "autoAllowCommands": ["find", "grep", "ls", "cat", "head", "tail", "less", "more", "wc", "file", "stat", "du", "tree", "sort", "uniq", "cut", "awk", "sed", "diff", "cmp", "ps", "top", "htop", "df", "whoami", "id", "groups", "uname", "hostname", "date", "uptime", "env", "printenv", "ping", "nslookup", "dig", "netstat", "ss", "git"]
+    },
+    "fs_read": {
+      "allowedDirectories": ["$CODE_DIRECTORY"]
+    },
+    "fs_write": {
+      "allowedDirectories": ["$PROJECT_DIR"]
+    }
+  },
+  "useLegacyMcpJson": false,
+  "model": "auto"
+}
