@@ -75,12 +75,14 @@ where the lambda is deployed
 8.1 create the lambda function code in src/code
 8.2 the function accepts event['bucketName'] parameter
 8.3 the function creates an S3 bucket with the provided name
-8.4 the function must use the latest Python runtime available in AWS Lambda
-8.5 use boto3 for S3 operations
-8.6 log all actions, errors to console for CloudWatch Logs capture
-8.7 validate bucket name follows S3 naming rules from latest AWS documentation
-8.8 return success response with bucket name and region
-8.9 create bucket in same region as Lambda function
+8.4 the function enables versioning on the created bucket
+8.5 the function configures lifecycle policy to keep only 5 versions with NoncurrentVersionExpiration after 1 day on the created bucket
+8.6 the function must use the latest Python runtime available in AWS Lambda
+8.7 use boto3 for S3 operations
+8.8 log all actions, errors to console for CloudWatch Logs capture
+8.9 validate bucket name follows S3 naming rules from latest AWS documentation
+8.10 return success response with bucket name and region
+8.11 create bucket in same region as Lambda function
 
 9 Create the lambda function deployment script
 9.1 create src/install/lambda.sh
@@ -110,5 +112,14 @@ where the lambda is deployed
 12.4 Log all errors to CloudWatch
 12.5 Display all errors
 12.6 Log all output to CloudWatch
+
+13 KMS Encryption Support
+13.1 run.sh prompts for optional KMS key ARN
+13.2 Lambda accepts optional event['kmsKeyArn'] parameter
+13.3 Lambda applies KMS encryption to bucket if KMS key ARN provided
+13.4 Lambda policy includes s3:PutEncryptionConfiguration permission
+13.5 Lambda policy includes kms:Decrypt and kms:GenerateDataKey permissions
+13.6 KMS key must be in same region as Lambda and bucket
+13.7 KMS key policy must allow Lambda role to use the key
 
 

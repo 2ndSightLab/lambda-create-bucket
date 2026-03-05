@@ -21,6 +21,7 @@ def lambda_handler(event, context):
     """
     try:
         bucket_name = event.get('bucketName')
+        kms_key_arn = event.get('kmsKeyArn')
         
         if not bucket_name:
             print("ERROR: bucketName parameter is required")
@@ -44,44 +45,114 @@ def lambda_handler(event, context):
             }
         
         region = os.environ.get('AWS_REGION', 'us-east-1')
-        print(f"Creating bucket: {bucket_name} in region: {region}")
+        print(f"Creating or updating bucket: {bucket_name} in region: {region}")
         
-        if region == 'us-east-1':
-            s3_client.create_bucket(Bucket=bucket_name)
-        else:
-            s3_client.create_bucket(
+        bucket_created = False
+        try:
+            if region == 'us-east-1':
+                s3_client.create_bucket(Bucket=bucket_name)
+            else:
+                s3_client.create_bucket(
+                    Bucket=bucket_name,
+                    CreateBucketConfiguration={'LocationConstraint': region}
+                )
+            bucket_created = True
+            print(f"Bucket {bucket_name} created successfully in {region}")
+        except s3_client.exceptions.BucketAlreadyOwnedByYou:
+            print(f"Bucket {bucket_name} already exists, updating configuration")
+        except s3_client.exceptions.BucketAlreadyExists:
+            error_msg = f"Bucket {bucket_name} already exists and is owned by another account"
+            print(f"ERROR: {error_msg}")
+            return {
+                'statusCode': 409,
+                'body': json.dumps({
+                    'error': error_msg
+                })
+            }
+        
+        try:
+            print(f"Enabling versioning on bucket: {bucket_name}")
+            s3_client.put_bucket_versioning(
                 Bucket=bucket_name,
-                CreateBucketConfiguration={'LocationConstraint': region}
+                VersioningConfiguration={'Status': 'Enabled'}
             )
+            print(f"Versioning enabled on bucket: {bucket_name}")
+        except Exception as e:
+            error_msg = f"Failed to enable versioning: {str(e)}"
+            print(f"ERROR: {error_msg}")
+            return {
+                'statusCode': 500,
+                'body': json.dumps({
+                    'error': error_msg
+                })
+            }
         
-        print(f"SUCCESS: Bucket {bucket_name} created successfully in {region}")
+        if kms_key_arn:
+            try:
+                print(f"Enabling KMS encryption on bucket: {bucket_name} with key: {kms_key_arn}")
+                s3_client.put_bucket_encryption(
+                    Bucket=bucket_name,
+                    ServerSideEncryptionConfiguration={
+                        'Rules': [
+                            {
+                                'ApplyServerSideEncryptionByDefault': {
+                                    'SSEAlgorithm': 'aws:kms',
+                                    'KMSMasterKeyID': kms_key_arn
+                                },
+                                'BucketKeyEnabled': True
+                            }
+                        ]
+                    }
+                )
+                print(f"KMS encryption enabled on bucket: {bucket_name}")
+            except Exception as e:
+                error_msg = f"Failed to enable KMS encryption: {str(e)}"
+                print(f"ERROR: {error_msg}")
+                return {
+                    'statusCode': 500,
+                    'body': json.dumps({
+                        'error': error_msg
+                    })
+                }
+        
+        try:
+            print(f"Configuring lifecycle policy on bucket: {bucket_name}")
+            s3_client.put_bucket_lifecycle_configuration(
+                Bucket=bucket_name,
+                LifecycleConfiguration={
+                    'Rules': [
+                        {
+                            'ID': 'KeepOnly5Versions',
+                            'Filter': {'Prefix': ''},
+                            'Status': 'Enabled',
+                            'NoncurrentVersionExpiration': {
+                                'NoncurrentDays': 1,
+                                'NewerNoncurrentVersions': 5
+                            }
+                        }
+                    ]
+                }
+            )
+            print(f"Lifecycle policy configured on bucket: {bucket_name}")
+        except Exception as e:
+            error_msg = f"Failed to configure lifecycle policy: {str(e)}"
+            print(f"ERROR: {error_msg}")
+            return {
+                'statusCode': 500,
+                'body': json.dumps({
+                    'error': error_msg
+                })
+            }
+        
+        action = 'created' if bucket_created else 'updated'
+        print(f"SUCCESS: Bucket {bucket_name} {action} and fully configured in {region}")
         
         return {
             'statusCode': 200,
             'body': json.dumps({
-                'message': 'Bucket created successfully',
+                'message': f'Bucket {action} successfully',
                 'bucketName': bucket_name,
                 'region': region
-            })
-        }
-        
-    except s3_client.exceptions.BucketAlreadyExists:
-        error_msg = f"Bucket {bucket_name} already exists and is owned by another account"
-        print(f"ERROR: {error_msg}")
-        return {
-            'statusCode': 409,
-            'body': json.dumps({
-                'error': error_msg
-            })
-        }
-    
-    except s3_client.exceptions.BucketAlreadyOwnedByYou:
-        error_msg = f"Bucket {bucket_name} already exists in your account"
-        print(f"ERROR: {error_msg}")
-        return {
-            'statusCode': 409,
-            'body': json.dumps({
-                'error': error_msg
             })
         }
     

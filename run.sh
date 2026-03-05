@@ -9,12 +9,20 @@ if [ -z "$BUCKET_NAME" ]; then
   exit 1
 fi
 
+read -p "Enter KMS key ARN (optional, press Enter to skip): " KMS_KEY_ARN
+
+if [ -z "$KMS_KEY_ARN" ]; then
+  PAYLOAD="{\"bucketName\":\"$BUCKET_NAME\"}"
+else
+  PAYLOAD="{\"bucketName\":\"$BUCKET_NAME\",\"kmsKeyArn\":\"$KMS_KEY_ARN\"}"
+fi
+
 echo "Invoking Lambda function to create bucket: $BUCKET_NAME"
 
 aws lambda invoke \
   --function-name "$LAMBDA" \
   --cli-binary-format raw-in-base64-out \
-  --payload "{\"bucketName\":\"$BUCKET_NAME\"}" \
+  --payload "$PAYLOAD" \
   --region "$REGION" \
   --no-cli-pager \
   response.json
