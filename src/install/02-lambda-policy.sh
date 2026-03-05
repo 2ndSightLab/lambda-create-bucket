@@ -55,6 +55,14 @@ if aws iam get-policy --policy-arn "$POLICY_ARN" --no-cli-pager 2>&1 | grep -q "
   echo "Policy $LAMBDA_ROLE_POLICY created successfully"
 else
   echo "Policy $LAMBDA_ROLE_POLICY already exists"
+  
+  OLDEST_VERSION=$(aws iam list-policy-versions --policy-arn "$POLICY_ARN" --no-cli-pager --query 'Versions[?IsDefaultVersion==`false`]|[0].VersionId' --output text)
+  
+  if [ "$OLDEST_VERSION" != "None" ] && [ -n "$OLDEST_VERSION" ]; then
+    echo "Deleting oldest policy version: $OLDEST_VERSION"
+    aws iam delete-policy-version --policy-arn "$POLICY_ARN" --version-id "$OLDEST_VERSION" --no-cli-pager
+  fi
+  
   UPDATE_OUTPUT=$(aws iam create-policy-version --policy-arn "$POLICY_ARN" --policy-document "$POLICY_DOCUMENT" --set-as-default --no-cli-pager 2>&1)
   if [ $? -eq 0 ]; then
     echo "Policy version created successfully"
